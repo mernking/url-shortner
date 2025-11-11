@@ -11,8 +11,11 @@ export default defineConfig({
     include: /\.(js|jsx)$/,
   },
   server: {
+    // proxy: {
+    //   '/admin': 'http://localhost:4000',
+    // },
     proxy: {
-      '/admin': 'http://localhost:4000',
+      '/admin': 'https://url-shortner-uk9k.onrender.com',
     },
   },
 })
