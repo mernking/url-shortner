@@ -4,15 +4,17 @@ services:
     build: .
     volumes:
       - ./:/usr/src/app
-      - prisma_data:/usr/src/app/dev_db
+      - prisma_data:/usr/src/app/prisma/dev.db
     ports:
       - "4000:4000"
     environment:
-      - DATABASE_URL=file:./dev.db
-      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=file:./prisma/dev.db
+      - JWT_SECRET=${JWT_SECRET:-default-secret-change-in-production}
       - PORT=4000
     command: >
-      sh -c "npx prisma migrate deploy || npx prisma migrate dev --name init --skip-seed;
+      sh -c "npx prisma migrate deploy || npx prisma migrate dev --name init --skip-generate;
+             npx prisma generate;
+             npm run db:seed || echo 'Seeding failed, continuing...';
              node src/server.js"
 volumes:
   prisma_data:
