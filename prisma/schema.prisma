@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int            @id @default(autoincrement())
+  email              String         @unique
+  password           String
+  name               String?
+  isAdmin            Boolean        @default(false)
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  apiKeys            ApiKey[]
+  subscriptions      Subscription[]
+  userRoles          UserRole[]
+  activityLogs       ActivityLog[]
+}
+
+model ApiKey {
+  id           Int      @id @default(autoincrement())
+  key          String   @unique
+  name         String?
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+  createdAt    DateTime @default(now())
+  isActive     Boolean  @default(true)
+  dailyLimit   Int?     // optional usage limit to trigger alerts
+  alerts       Alert[]
+  links        Link[]
+}
+
+model Link {
+  id         Int      @id @default(autoincrement())
+  slug       String   @unique
+  destination String
+  title      String?
+  webhookUrl String?
+  createdBy  ApiKey   @relation(fields: [apiKeyId], references: [id])
+  apiKeyId   Int
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime?
+  password   String?
+  clicks     Click[]
+  tags       Tag[]
+  meta       Json?
+}
+
+model Click {
+  id         Int      @id @default(autoincrement())
+  link       Link     @relation(fields: [linkId], references: [id])
+  linkId     Int
+  occurredAt DateTime @default(now())
+  ip         String?
+  country    String?
+  region     String?
+  city       String?
+  ua         String?
+  referrer   String?
+  headers    Json?
+}
+
+model Alert {
+  id        Int      @id @default(autoincrement())
+  apiKey    ApiKey   @relation(fields: [apiKeyId], references: [id])
+  apiKeyId  Int
+  type      String
+  message   String
+  createdAt DateTime @default(now())
+  resolved  Boolean  @default(false)
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  links Link[]
+}
+
+model Subscription {
+  id                Int         @id @default(autoincrement())
+  user              User        @relation(fields: [userId], references: [id])
+  userId            Int
+  planId            String
+  status            String      // active, canceled, past_due, etc.
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean    @default(false)
+  stripeSubscriptionId String   @unique
+  stripeCustomerId   String     @unique
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @default(now()) @updatedAt
+  invoices           Invoice[]
+}
+
+model PricingPlan {
+  id          String   @id
+  name        String
+  description String?
+  price       Float
+  currency    String   @default("usd")
+  interval    String   // month, year
+  features    Json     // array of feature limits
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Invoice {
+  id                Int         @id @default(autoincrement())
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    Int
+  stripeInvoiceId   String      @unique
+  amount            Float
+  currency          String
+  status            String      // paid, open, void, draft
+  invoicePdf        String?
+  hostedInvoiceUrl  String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model RequestLog {
+  id        Int      @id @default(autoincrement())
+  time      DateTime @default(now())
+  method    String
+  path      String
+  ip        String
+  country   String?
+  region    String?
+  city      String?
+  latitude  Float?
+  longitude Float?
+  headers   Json
+}
+
+model Role {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userRoles   UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  description String?
+  resource    String
+  action      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model RolePermission {
+  id           Int         @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  role         Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

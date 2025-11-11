@@ -1,0 +1,18 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    volumes:
+      - ./:/usr/src/app
+      - prisma_data:/usr/src/app/dev_db
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=4000
+    command: >
+      sh -c "npx prisma migrate deploy || npx prisma migrate dev --name init --skip-seed;
+             node src/server.js"
+volumes:
+  prisma_data:

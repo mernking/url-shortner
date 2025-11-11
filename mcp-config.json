@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "url-shortener": {
+      "command": "node",
+      "args": ["./mcp-server/build/index.js"],
+      "env": {
+        "URL_SHORTENER_API_BASE_URL": "http://localhost:4000",
+        "URL_SHORTENER_API_KEY": "your-actual-api-key",
+        "URL_SHORTENER_ADMIN_EMAIL": "admin@example.com",
+        "URL_SHORTENER_ADMIN_PASSWORD": "your-admin-password",
+        "URL_SHORTENER_MCP_ENABLED": "true"
+      },
+      "disabled": false,
+      "alwaysAllow": [],
+      "disabledTools": []
+    }
+  }
+}
