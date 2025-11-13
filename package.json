@@ -1,5 +1,5 @@
 {
-  "name": "backend api key",
+  "name": "backend_url_shortener",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
